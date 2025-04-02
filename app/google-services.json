@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "643118546341",
+    "firebase_url": "https://job-assign-default-rtdb.firebaseio.com",
+    "project_id": "job-assign",
+    "storage_bucket": "job-assign.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:643118546341:android:15debdec1e831c40aa7c4c",
+        "android_client_info": {
+          "package_name": "com.example.workassign"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAbCkCbTMl-5ZYenZW1p0U94rKZZXf2GiQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
