@@ -1,3 +1,0 @@
-package com.example.workassign.Data
-
-data class Users()

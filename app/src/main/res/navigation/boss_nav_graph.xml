@@ -1,6 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
              xmlns:app="http://schemas.android.com/apk/res-auto"
-             android:id="@+id/boss_nav_graph">
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/boss_nav_graph"
+    app:startDestination="@id/employeeFragment">
 
+    <fragment
+        android:id="@+id/employeeFragment"
+        android:name="com.example.workassign.employeeFragment"
+        android:label="fragment_employee"
+        tools:layout="@layout/fragment_employee" >
+        <action
+            android:id="@+id/action_employeeFragment_to_workFragment"
+            app:destination="@id/workFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/workFragment"
+        android:name="com.example.workassign.workFragment"
+        android:label="fragment_work"
+        tools:layout="@layout/fragment_work" >
+        <argument
+            android:name="employeeData"
+            app:argType="com.example.workassign.Data.Users" />
+        <action
+            android:id="@+id/action_workFragment_to_assignWorkFragment"
+            app:destination="@id/assignWorkFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/assignWorkFragment"
+        android:name="com.example.workassign.assignWorkFragment"
+        android:label="fragment_assign_work"
+        tools:layout="@layout/fragment_assign_work" >
+        <argument
+            android:name="employeeData"
+            app:argType="com.example.workassign.Data.Users" />
+    </fragment>
 </navigation>

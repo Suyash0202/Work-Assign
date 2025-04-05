@@ -4,18 +4,19 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.util.Log.e
 import android.widget.RadioButton
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import coil.load
 import coil.transform.CircleCropTransformation
 import com.example.workassign.Data.Users
 import com.example.workassign.MainActivity
 import com.example.workassign.R
+import com.example.workassign.databinding.AccountDialogeBinding
 import com.example.workassign.databinding.ActivitySignUpBinding
 import com.example.workassign.utils.Utils
 import com.google.firebase.auth.FirebaseAuth
@@ -23,8 +24,6 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import kotlin.jvm.java
-import kotlin.toString
 
 class SignUpActivity : AppCompatActivity() {
     private lateinit var firebase: FirebaseAuth
@@ -35,7 +34,6 @@ class SignUpActivity : AppCompatActivity() {
     private val selectImage =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
             userImageUri = uri
-
             binding.ivProfile.load(userImageUri) {
                 transformations(CircleCropTransformation())
             }
@@ -49,24 +47,30 @@ class SignUpActivity : AppCompatActivity() {
 
         firebase = FirebaseAuth.getInstance()
 
-        binding.ivProfile.setOnClickListener { selectImage.launch("image/*") }
+        binding.ivProfile.setOnClickListener {
+            selectImage.launch("image/*")
+        }
 
         binding.rgUserType.setOnCheckedChangeListener { _, checkedId ->
             userType = findViewById<RadioButton>(checkedId).text.toString()
             Log.d("userType", userType)
         }
 
-        binding.btnRegister.setOnClickListener { setSignup() }
+        binding.btnRegister.setOnClickListener {
+            if (userType.isEmpty()) {
+                Utils.showToast(this, "Please select a user type")
+            } else {
+                registerUser()
+            }
+        }
 
         binding.tvSignIn.setOnClickListener {
             startActivity(Intent(this, SigninActivity::class.java))
             finish()
-            true
         }
-
-
     }
-    private fun setSignup() {
+
+    private fun registerUser() {
         val name = binding.etName.text.toString()
         val email = binding.etEmail.text.toString()
         val password = binding.etPassword.text.toString()
@@ -77,29 +81,44 @@ class SignUpActivity : AppCompatActivity() {
                 Utils.showToast(this, "Please Upload Image")
             } else if (password == confirmPassword) {
                 Utils.showProgressDialog(this)
-                uploadImageProfile(name, email, password)
+                createUserInFirebase(name, email, password)
             } else {
-                Utils.showToast(this, "Password not match")
+                Utils.showToast(this, "Passwords do not match")
             }
         } else {
             Utils.showToast(this, "Empty fields are not allowed")
         }
     }
 
-    private fun uploadImageProfile(name: String, email: String, password: String) {
+    private fun createUserInFirebase(name: String, email: String, password: String) {
         lifecycleScope.launch {
-            val currentUserId = firebase.currentUser?.uid ?: return@launch
+            try {
+                val user = firebase.createUserWithEmailAndPassword(email, password).await().user
+                if (user != null) {
+                    uploadUserProfile(user.uid, name, email, password)
+                }
+
+            } catch (e: Exception) {
+                Utils.hideProgressDialog()
+                Utils.showToast(this@SignUpActivity, e.message.toString())
+            }
+        }
+    }
+
+    private fun uploadUserProfile(userId: String, name: String, email: String, password: String) {
+        lifecycleScope.launch {
             val storageRef = FirebaseStorage.getInstance().getReference("Profile")
-                .child(currentUserId).child("Profile.jpg")
+                .child(userId)
+                .child("Profile.jpg")
 
             try {
                 val uploadTask = storageRef.putFile(userImageUri!!).await()
                 if (uploadTask.task.isSuccessful) {
                     val downloadUrl = storageRef.downloadUrl.await()
-                    saveUserData(name, email, password, downloadUrl)
+                    saveUserDataToDatabase(userId, name, email, password, downloadUrl)
                 } else {
                     Utils.hideProgressDialog()
-                    //showToast("Upload failed: ${uploadTask.task.exception?.message}")
+                    Utils.showToast(this@SignUpActivity, "Image upload failed")
                 }
             } catch (e: Exception) {
                 Utils.hideProgressDialog()
@@ -108,33 +127,38 @@ class SignUpActivity : AppCompatActivity() {
         }
     }
 
-    private fun saveUserData(name: String, email: String, password: String, downloadUrl: Uri) {
+    private fun saveUserDataToDatabase(userId: String, name: String, email: String, password: String, downloadUrl: Uri) {
         lifecycleScope.launch {
             try {
-                val firebaseAuth = FirebaseAuth.getInstance()
-                val user = firebase.createUserWithEmailAndPassword(email, password).await().user ?: return@launch
-                val database = FirebaseDatabase.getInstance().getReference("Users")
-                val userUid = user.uid
-                val userType = if (binding.rbBoss.isChecked) "Boss" else "Employee"
-                val userData = Users(user.uid, name, email,password, downloadUrl.toString(), userType)
+                val userData = Users(Id=userId,name= name, email =  email, password =  password,image = downloadUrl.toString(), userType =  userType)
+                FirebaseDatabase.getInstance().getReference("Users")
+                    .child(userId)
+                    .setValue(userData)
+                    .await()
+                FirebaseAuth.getInstance().currentUser?.sendEmailVerification()?.addOnSuccessListener {
 
-                database.child(userUid).setValue(userData).await()
-
-                Utils.apply {
-                    hideProgressDialog()
-                    showToast(this@SignUpActivity, "Registration Successful")
+                    val dialog = AccountDialogeBinding.inflate(layoutInflater)
+                    val alertDialog = AlertDialog.Builder(this@SignUpActivity)
+                        .setView(dialog.root)
+                        .setCancelable(false)
+                        .create()
+                    Utils.hideProgressDialog()
+                    alertDialog.show()
+                    dialog.Okid.setOnClickListener {
+                        alertDialog.dismiss()
+                        FirebaseAuth.getInstance().signOut()
+                        startActivity(Intent(this@SignUpActivity, SigninActivity::class.java))
+                        finish()
+                    }
                 }
-
-                startActivity(Intent(this@SignUpActivity, MainActivity::class.java))
-                finish()
+                    ?.addOnFailureListener {exception->
+                        Utils.hideProgressDialog()
+                        Utils.showToast(this@SignUpActivity, "Email verification failed: ${exception.message}")
+                    }
             } catch (e: Exception) {
-                Utils.apply {
-                    hideProgressDialog()
-                    showToast(this@SignUpActivity, e.message.toString())
-                }
+                Utils.hideProgressDialog()
+                Utils.showToast(this@SignUpActivity, e.message.toString())
             }
         }
     }
-
 }
-
