@@ -46,17 +46,20 @@ class assignWorkFragment : Fragment() {
         }
         binding.tvDatePicker.setOnClickListener {
             DatePickerDialog(requireContext(), datePicker, myCalendar.get(Calendar.YEAR), myCalendar.get(Calendar.MONTH), myCalendar.get(Calendar.DAY_OF_MONTH)).show()
-            
+
         }
 
 
     }
 
     private fun updateLable(calendar: Calendar) {
-
+        val myFormat = "dd-MM-yyyy"
+        val sdf = java.text.SimpleDateFormat(myFormat)
+        binding.tvLastDate.text = sdf.format(calendar.time)
 
 
     }
+
 
     private fun setPriority() {
         binding.apply {
