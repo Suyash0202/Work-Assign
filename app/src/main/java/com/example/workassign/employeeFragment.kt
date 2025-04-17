@@ -6,8 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContentProviderCompat.requireContext
-import androidx.core.content.ContextCompat.startActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.workassign.Data.Users
 import com.example.workassign.auth.SigninActivity
@@ -20,14 +18,14 @@ import com.google.firebase.database.ValueEventListener
 
 
 class employeeFragment : Fragment() {
-   private lateinit var binding: FragmentEmployeeBinding
-   private lateinit var employeeAdapter: EmployeeAdapter
+    private lateinit var binding: FragmentEmployeeBinding
+    private lateinit var employeeAdapter: EmployeeAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View? {
-       binding = FragmentEmployeeBinding.inflate(layoutInflater)
+        binding = FragmentEmployeeBinding.inflate(layoutInflater)
 
         binding.apply {
             employeelog.setOnMenuItemClickListener {
@@ -49,21 +47,21 @@ class employeeFragment : Fragment() {
     private fun showallEmployee() {
         FirebaseDatabase.getInstance().getReference("Users").addValueEventListener(object : ValueEventListener{
             override fun onDataChange(snapshot: DataSnapshot) {
-                val empList = arrayListOf<Users>()
+                val empList =   arrayListOf<Users>()
                 for (emp in snapshot.children) {
                     val currentUser = emp.getValue(Users::class.java)
                     if (currentUser!!.userType == "Employee") {
                         empList.add(currentUser)
-
+                    }
                     }
                     employeeAdapter.differ.submitList(empList)
                     binding.rvemployes.adapter = employeeAdapter
-                }
+
             }
             override fun onCancelled(error: DatabaseError) {
                 TODO("Not yet implemented")
             }
-    })
+        })
     }
     private fun prepareRvForEmployeeAdapter() {
         employeeAdapter = EmployeeAdapter()
@@ -73,18 +71,17 @@ class employeeFragment : Fragment() {
     }
 
     private fun showLogoutDialog() {
-    val builder = AlertDialog.Builder(requireContext())
-    builder.setTitle("Logout")
-        .setMessage("Are you sure you want to logout?")
-        .setPositiveButton("Yes") { _, _ ->
-            FirebaseAuth.getInstance().signOut()
-            val intent = Intent(requireContext(), SigninActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
-            requireActivity().finish()
-        }
-        .setNegativeButton("No", null)
-        .show()
+        val builder = AlertDialog.Builder(requireContext())
+        builder.setTitle("Logout")
+            .setMessage("Are you sure you want to logout?")
+            .setPositiveButton("Yes") { _, _ ->
+                FirebaseAuth.getInstance().signOut()
+                val intent = Intent(requireContext(), SigninActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+                requireActivity().finish()
+            }
+            .setNegativeButton("No", null)
+            .show()
+    }
 }
-}
-

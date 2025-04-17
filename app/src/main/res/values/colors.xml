@@ -9,4 +9,8 @@
     <color name="Light2">#00B4D8</color>
     <color name="Light3">#90e0ef</color>
     <color name="Light4">#caf0f8</color>
+    <color name="status_pending">#F83F15</color>
+    <color name="status_inprogress">#F6C700</color>
+    <color name="status_done">#4CAF50</color>
+    <color name="light_gray">#DCCACA</color>
 </resources>
