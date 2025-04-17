@@ -10,12 +10,13 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+       >
 
         <ImageView
             android:id="@+id/rvImage"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
             android:layout_margin="10dp"
             android:scaleType="centerCrop"
             android:background="@drawable/circle_background"/>
@@ -28,9 +29,9 @@
             android:layout_weight="2"
             android:layout_gravity="center_vertical"
             android:text="Name"
-            android:textSize="20sp"
+            android:textSize="65sp"
             android:textStyle="bold"
-            android:layout_marginStart="9.05dp"
+            android:layout_marginLeft="@dimen/_20sdp"
             />
 
 

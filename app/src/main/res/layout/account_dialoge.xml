@@ -1,52 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content">
-
+    android:layout_width="@dimen/_200sdp"
+    android:layout_height="@dimen/_300sdp"
+    android:background="@color/white"
+    android:layout_gravity="center"
+    android:padding="16dp">
 
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="200dp"
-        android:layout_height="200dp"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
         android:src="@drawable/img"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:scaleType="centerCrop"
+        android:background="@drawable/rounded_image_bg"
+        android:padding="8dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/accountCreated"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        />
 
     <TextView
         android:id="@+id/accountCreated"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Account Created "
-        android:textSize="20dp"
+        android:text="Account Created"
+        android:textSize="22sp"
         android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:textColor="@color/black"
+        app:layout_constraintTop_toBottomOf="@id/imageView"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/imageView" />
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp" />
+
     <TextView
         android:id="@+id/checkbox"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:textAlignment="center"
-        android:text="Please check your to gmail to account verification"
-        android:textSize="20dp"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:text="Please check your Gmail to verify your account."
+        android:textSize="16sp"
+        android:textColor="@color/black"
+        app:layout_constraintTop_toBottomOf="@id/accountCreated"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/accountCreated" />
-
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="8dp"
+        android:padding="8dp" />
 
     <Button
         android:id="@+id/Okid"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintEnd_toEndOf="parent"
         android:text="OK"
+        android:backgroundTint="@color/LightBlue"
+        android:textColor="@color/white"
+        android:layout_marginTop="40dp"
+        app:layout_constraintTop_toBottomOf="@id/checkbox"
         app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginTop="60dp"
-        app:layout_constraintTop_toTopOf="@id/checkbox" />
-
-
-
+        app:layout_constraintEnd_toEndOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

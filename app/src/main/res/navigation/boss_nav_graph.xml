@@ -10,9 +10,14 @@
         android:name="com.example.workassign.employeeFragment"
         android:label="fragment_employee"
         tools:layout="@layout/fragment_employee" >
+        <argument
+            android:name="employeeData"
+            app:argType="com.example.workassign.Data.Users" />
         <action
             android:id="@+id/action_employeeFragment_to_workFragment"
-            app:destination="@id/workFragment" />
+            app:destination="@id/workFragment"
+            app:enterAnim="@android:anim/slide_out_right"
+            app:exitAnim="@android:anim/fade_in" />
     </fragment>
     <fragment
         android:id="@+id/workFragment"
@@ -24,7 +29,9 @@
             app:argType="com.example.workassign.Data.Users" />
         <action
             android:id="@+id/action_workFragment_to_assignWorkFragment"
-            app:destination="@id/assignWorkFragment" />
+            app:destination="@id/assignWorkFragment"
+            app:enterAnim="@android:anim/slide_in_left"
+            app:exitAnim="@android:anim/fade_out" />
     </fragment>
     <fragment
         android:id="@+id/assignWorkFragment"
@@ -34,5 +41,8 @@
         <argument
             android:name="employeeData"
             app:argType="com.example.workassign.Data.Users" />
+        <action
+            android:id="@+id/action_assignWorkFragment_to_workFragment"
+            app:destination="@id/workFragment" />
     </fragment>
 </navigation>
