@@ -87,12 +87,12 @@ class SignUpActivity : AppCompatActivity() {
         val email = binding.etEmail.text.toString().trim()
         val password = binding.etPassword.text.toString().trim()
         val confirmPassword = binding.etConfirmPassword.text.toString().trim()
-
         if (name.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty() && confirmPassword.isNotEmpty()) {
             if (userImageUri == null) {
                 Utils.showToast(this, "Please Upload Image")
             } else if (password == confirmPassword) {
                 Utils.showProgressDialog(this)
+                Log.d("AuthUser", "Current user UID:")
                 createUserInFirebase(name, email, password)
             } else {
                 Utils.showToast(this, "Passwords do not match")
@@ -106,6 +106,8 @@ class SignUpActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val user = firebase.createUserWithEmailAndPassword(email, password).await().user
+                Log.d("UserUID", "Current user UID: ${FirebaseAuth.getInstance().currentUser?.uid}")
+
                 if (user != null) {
                     uploadUserProfile(user.uid, name, email, password)
                 }

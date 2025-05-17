@@ -71,7 +71,7 @@ class EmployeeActivityAdapter( val onProgressClick: (Works, MaterialButton) -> U
             btnWorkDone.visibility= if (isExpanded) View.VISIBLE else View.GONE
             workDescT.visibility= if (isExpanded) View.VISIBLE else View.GONE
             constraintLayout.setOnClickListener {
-                isAnyItem(position)
+                toggleExpand(position)
             }
 
             btnWorkStart.setOnClickListener {onProgressClick(work,btnWorkStart)}
@@ -80,20 +80,19 @@ class EmployeeActivityAdapter( val onProgressClick: (Works, MaterialButton) -> U
         }
     }
 
-    private fun isAnyItem(i: Int) {
-        val currentList = differ.currentList.map { it.copy() }.toMutableList()
-        val expandedItem = differ.currentList.indexOfFirst { it.expanded }
-        if(expandedItem >= 0 && expandedItem != i){
-            differ.currentList[expandedItem].expanded = false
-            notifyItemChanged(expandedItem,0)
-            notifyItemChanged(i,1)
+    private fun toggleExpand(position: Int) {
+        val currentList = differ.currentList.toMutableList()
+        val updatedList = currentList.mapIndexed { index, item ->
+            if (index == position) item.copy(expanded = !item.expanded)
+            else item.copy(expanded = false)
         }
-
-        currentList[i].expanded = !currentList[i].expanded
-        differ.submitList(currentList)
-
-
+        differ.submitList(updatedList)
     }
+
+
+
+
+
 
     override fun getItemCount(): Int {
        return differ.currentList.size

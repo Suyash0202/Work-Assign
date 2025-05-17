@@ -13,116 +13,134 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.workassign.databinding.FragmentWorkBinding
 import com.example.workassign.utils.Utils
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
-import kotlin.getValue
+import com.google.firebase.database.*
 
 class workFragment : Fragment() {
-    private lateinit var binding: FragmentWorkBinding
+
+    private var _binding: FragmentWorkBinding? = null
+    private val binding get() = _binding!!
+
     private lateinit var workAdapter: WorkAdapter
     private lateinit var workRoom: String
-    val employeeDetails by navArgs<workFragmentArgs>()
+
+    private val employeeDetails by navArgs<workFragmentArgs>()
+
+    private val databaseReference: DatabaseReference by lazy {
+        FirebaseDatabase.getInstance().getReference("Work")
+    }
+
+    private var workListener: ValueEventListener? = null
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View? {
+    ): View {
+        _binding = FragmentWorkBinding.inflate(inflater, container, false)
 
-        binding = FragmentWorkBinding.inflate(layoutInflater)
-
+        setupToolbar()
+        prepareRecyclerView()
+        showWorks()
 
         binding.floatingActionButton.setOnClickListener {
-            val action =
-                workFragmentDirections.actionWorkFragmentToAssignWorkFragment(employeeDetails.employeeData)
+            val action = workFragmentDirections.actionWorkFragmentToAssignWorkFragment(employeeDetails.employeeData)
             findNavController().navigate(action)
         }
 
-        val empData = employeeDetails.employeeData.name
+        return binding.root
+    }
+
+    private fun setupToolbar() {
+        val empName = employeeDetails.employeeData.name
         binding.worktool.apply {
-            title = empData
+            title = empName
             setNavigationOnClickListener {
                 requireActivity().onBackPressedDispatcher.onBackPressed()
             }
         }
-        prepareRecyclerView()
-        showWorks()
-        return binding.root
-    }
-
-    private fun showWorks() {
-        Utils.showProgressDialog(requireContext())
-        val bossId = FirebaseAuth.getInstance().currentUser?.uid
-
-         workRoom = "${bossId}_${employeeDetails.employeeData.Id}"
-        FirebaseDatabase.getInstance().getReference("Work").child(workRoom)
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    Log.d("WorkFragment", "onDataChange: ${snapshot.childrenCount} items found")
-                    val workList =mutableListOf<Works>()
-                    for (allworks in snapshot.children) {
-                        val work = allworks.getValue(Works::class.java)
-                       work?.firebaseKey = allworks.key ?: ""
-                        workList.add(work!!)
-                        Log.d("AdapterDebug", "Title: ${work?.workTitle}, Date: ${work?.workLastDate}, Desc: ${work?.workDescription}")
-
-                    }
-                    Log.d("FirebaseData", "Fetched ${workList.size} works")
-                    workAdapter.differ.submitList(workList)
-                    Utils.hideProgressDialog()
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Utils.hideProgressDialog()
-                    Log.e("FirebaseData", "Error fetching data: ${error.message}")
-                }
-
-            })
     }
 
     private fun prepareRecyclerView() {
         workAdapter = WorkAdapter(::onUnassignedClick)
         binding.workRecycle.apply {
-            layoutManager =
-                LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false)
+            layoutManager = LinearLayoutManager(requireContext())
             adapter = workAdapter
         }
     }
 
-    fun onUnassignedClick(works: Works) {
-              val builder= AlertDialog.Builder(context)
-              val alerDialoge = builder.create()
-              builder.setTitle("Unassigned Work")
-                  .setMessage("Are you Sue You want to Unassigned this Work")
-                  .setPositiveButton("Yes") {_,_->
-                      unassignWork(works)
+    private fun showWorks() {
+        Utils.showProgressDialog(requireContext())
 
+        val bossId = FirebaseAuth.getInstance().currentUser?.uid ?: run {
+            Utils.hideProgressDialog()
+            Log.e("workFragment", "Current user is null")
+            return
+        }
+        workRoom = "${bossId}_${employeeDetails.employeeData.Id}"
 
-                  }
-                  .setNegativeButton("No"){_,_->
-                      alerDialoge.dismiss()
+        // Remove previous listener if exists
+        workListener?.let { databaseReference.child(workRoom).removeEventListener(it) }
 
-                  }.show()
+        workListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                Log.d("workFragment", "Work items found: ${snapshot.childrenCount}")
 
+                val workList = mutableListOf<Works>()
 
+                for (workSnapshot in snapshot.children) {
+                    val work = workSnapshot.getValue(Works::class.java)
+                    work?.firebaseKey = workSnapshot.key ?: ""
+                    work?.let { workList.add(it.copy()) }
+                    Log.d("workFragment", "Title: ${work?.workTitle}, Date: ${work?.workLastDate}")
+                }
+                workAdapter.differ.submitList(null)
+                workAdapter.differ.submitList(workList)
+                Utils.hideProgressDialog()
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Utils.hideProgressDialog()
+                Log.e("workFragment", "Error fetching data: ${error.message}")
+                Utils.showToast(requireContext(), "Failed to load works: ${error.message}")
+            }
+        }
+
+        databaseReference.child(workRoom).addValueEventListener(workListener!!)
     }
-    private fun workFragment.unassignWork(works: Works) {
-        val workKey = works.firebaseKey
-        if(workKey.isNotEmpty()) {
-            FirebaseDatabase.getInstance().getReference("Work").child(workRoom).child(workKey)
-                .removeValue().addOnSuccessListener {
 
-                    Utils.showToast(requireContext(), "Work Unassigned Successfully")
-                }
-                .addOnFailureListener {
-                    Utils.showToast(requireContext(), "Error: ${it.message}")
-                }
-        }
-        else{
-            Utils.showToast(requireContext(), "Error: Work key is empty")
-        }
+    private fun onUnassignedClick(work: Works) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Unassign Work")
+            .setMessage("Are you sure you want to unassign this work?")
+            .setPositiveButton("Yes") { dialog, _ ->
+                unassignWork(work)
+                dialog.dismiss()
+            }
+            .setNegativeButton("No") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
 
+    private fun unassignWork(work: Works) {
+        val workKey = work.firebaseKey
+        if (workKey.isNotEmpty()) {
+            databaseReference.child(workRoom).child(workKey)
+                .removeValue()
+                .addOnSuccessListener {
+                    Utils.showToast(requireContext(), "Work unassigned successfully")
+                }
+                .addOnFailureListener { e ->
+                    Utils.showToast(requireContext(), "Error: ${e.message}")
+                }
+        } else {
+            Utils.showToast(requireContext(), "Work key is empty, cannot unassign")
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        // Remove listener to avoid memory leaks
+        workListener?.let { databaseReference.child(workRoom).removeEventListener(it) }
+        _binding = null
     }
 }
-
-

@@ -51,8 +51,8 @@ class WorkAdapter(val onUnassignedClick: (Works) -> Unit) : RecyclerView.Adapter
             tvStatus.text = when (works.workStatus) {
                 "1" -> "Pending"
                 "2" -> "Progress"
-                "3" -> "Cancelled"
-                else -> "Completed"
+                "3" -> "Completed"
+                else -> "Cancelled"
             }
 
             val visibility = if (isExpanded) View.VISIBLE else View.GONE

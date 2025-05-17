@@ -1,11 +1,13 @@
 package com.example.workassign
 
+import android.R.attr.priority
 import android.app.DatePickerDialog
 import android.content.Context
 import android.content.Context.INPUT_METHOD_SERVICE
 import android.content.Intent
 import android.icu.util.Calendar
 import android.os.Bundle
+import android.util.Log
 import android.util.Log.e
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -13,15 +15,12 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
-import androidx.core.content.ContentProviderCompat.requireContext
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.workassign.databinding.FragmentAssignWorkBinding
 import com.example.workassign.utils.Utils
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
-import java.util.UUID
 
 
 class assignWorkFragment : Fragment() {
@@ -44,7 +43,7 @@ class assignWorkFragment : Fragment() {
                     hideKeyboard()
                 }
 
-           setPriority()
+                setPriority()
                 setDate()
                 binding.btnDone.setOnClickListener {
                     assignWork()
@@ -76,10 +75,12 @@ class assignWorkFragment : Fragment() {
             return
         }
 
-        val empData = employeeDetails.employeeData.Id
         val bossId = FirebaseAuth.getInstance().currentUser?.uid
+        Log.d("AssignWorkDebug", "bossId: $bossId, employeeId: ${employeeDetails.employeeData.Id}")
+
         val workRoom = "${bossId}_${employeeDetails.employeeData.Id}"
-        val pushId = "kwikwork" + UUID.randomUUID().toString().take(8)
+        val workRef = FirebaseDatabase.getInstance().getReference("Work").child(workRoom)
+        val pushId = workRef.push().key!!
 
         val work = Works(
             id = pushId,
@@ -90,8 +91,7 @@ class assignWorkFragment : Fragment() {
             workStatus = "1"
         )
         Utils.showProgressDialog(requireContext())
-        FirebaseDatabase.getInstance().getReference("Work").child(workRoom).child(pushId)
-            .child(pushId).setValue(work)
+        workRef.child(pushId).setValue(work)
             .addOnSuccessListener {
                 Utils.hideProgressDialog()
                 Utils.showToast(requireContext(), "Work assigned successfully")
