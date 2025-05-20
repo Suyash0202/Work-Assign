@@ -1,4 +1,4 @@
-package com.example.workassign
+package com.example.workassign.Data
 
 import com.google.firebase.database.PropertyName
 
@@ -14,6 +14,8 @@ data class Works(
     @get:PropertyName("id")
     @set:PropertyName("id")
     var id: String? = null,
+
+    var bossId: String? = null,
 
     @get:PropertyName("workDescription")
     @set:PropertyName("workDescription")

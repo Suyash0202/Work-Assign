@@ -1,10 +1,10 @@
 package com.example.workassign
 
+
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-
 import android.widget.AdapterView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -12,6 +12,13 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.workassign.Api.ApiUtilities
+import com.example.workassign.Data.AndroidConfig
+import com.example.workassign.Data.FCMMessage
+import com.example.workassign.Data.MessageBody
+import com.example.workassign.Data.NotificationData
+import com.example.workassign.Data.Users
+import com.example.workassign.Data.Works
 import com.example.workassign.auth.SigninActivity
 import com.example.workassign.databinding.ActivityEmployeeMainBinding
 import com.example.workassign.utils.Utils
@@ -22,6 +29,12 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.gson.Gson
+import getAccessToken
+import okhttp3.ResponseBody
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class EmployeeMainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityEmployeeMainBinding
@@ -107,7 +120,8 @@ class EmployeeMainActivity : AppCompatActivity() {
                 }
                 Log.d("DATA_SIZE", "Total work items found: ${workList.size}")
                 masterWorkList = workList
-                employeeWorkAdapter.differ.submitList(workList)
+                val selectedStatus = binding.statusFilterSpinner.selectedItem.toString()
+                filterListByStatus(selectedStatus)
                 Utils.hideProgressDialog()
             }
 
@@ -149,8 +163,10 @@ class EmployeeMainActivity : AppCompatActivity() {
                 progressButton.apply {
                     text = "In Progress"
                     setTextColor(ContextCompat.getColor(this@EmployeeMainActivity, R.color.Light4))
+
                 }
                 updateStatus(works, "2")
+                sendNotification(works.bossId, works.workTitle.toString(), works.workLastDate.toString(), title = "Work Start")
 
             }
             .setNegativeButton("No", null)
@@ -167,6 +183,7 @@ class EmployeeMainActivity : AppCompatActivity() {
                     setTextColor(ContextCompat.getColor(this@EmployeeMainActivity, R.color.Light4))
                 }
                 updateStatus(works, "3")
+                sendNotification(works.bossId, works.workTitle.toString(), works.workLastDate.toString(), title = "Work Complete")
             }
             .setNegativeButton("No", null)
             .show()
@@ -272,6 +289,58 @@ class EmployeeMainActivity : AppCompatActivity() {
         Log.d("FilterDebug", "All statuses in list: ${masterWorkList.map { it.workStatus }}")
         employeeWorkAdapter.differ.submitList(filteredList)
     }
+    private fun sendNotification(employeeId: String?, workTitle: String, lastDate: String, title: String) {
+        val empRef = FirebaseDatabase.getInstance().getReference("Users").child(employeeId ?: "")
 
+        empRef.get().addOnSuccessListener {
+            val bossToken = it.child("usertoken").value?.toString()
+
+            if (bossToken.isNullOrBlank() || bossToken == "null") {
+                Log.e("Suyash", "Invalid or missing FCM token for employee: $employeeId")
+                return@addOnSuccessListener
+            }
+
+            val notification = NotificationData(
+                title = title,
+                body = "Task: $workTitle | Deadline: $lastDate"
+            )
+            val messageBody = MessageBody(
+                token = bossToken,
+                android = AndroidConfig(notification),
+                data = mapOf("lastDate" to lastDate)
+            )
+
+
+            val fcmMessage = FCMMessage(message = messageBody)
+
+            Log.d("Suyash", "Sending FCM to token: $bossToken")
+            Log.d("Suyash", "Notification: ${notification.title} - ${notification.body}")
+            Log.d("Suyash", "Payload: ${Gson().toJson(fcmMessage)}")
+
+            getAccessToken { accessToken ->
+                val authHeader = "Bearer $accessToken"
+
+                ApiUtilities.api.sendNotification(fcmMessage, authHeader)
+                    .enqueue(object : Callback<ResponseBody> {
+                        override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+                            if (response.isSuccessful) {
+                                Log.d("Success", "✅ FCM v1 Notification sent successfully")
+                            } else {
+                                Log.e("fail", "❌ FCM v1 Failed: ${response.code()} - ${response.errorBody()?.string()}")
+                            }
+                        }
+
+                        override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+                            Log.e("fail", "🔥 Error sending notification", t)
+                        }
+                    })
+            }
+
+        }.addOnFailureListener {
+            Log.e("Suyash", "❌ Failed to get employee token: ${it.message}")
+        }
+    }
 
 }
+
+

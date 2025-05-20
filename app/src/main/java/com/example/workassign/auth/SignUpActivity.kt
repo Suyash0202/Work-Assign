@@ -4,7 +4,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import android.util.Log.e
 import android.view.MotionEvent
 import android.view.inputmethod.InputMethodManager
 import android.widget.RadioButton
@@ -16,13 +15,13 @@ import androidx.lifecycle.lifecycleScope
 import coil.load
 import coil.transform.CircleCropTransformation
 import com.example.workassign.Data.Users
-import com.example.workassign.MainActivity
-import com.example.workassign.R
 import com.example.workassign.databinding.AccountDialogeBinding
 import com.example.workassign.databinding.ActivitySignUpBinding
 import com.example.workassign.utils.Utils
+import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -103,6 +102,8 @@ class SignUpActivity : AppCompatActivity() {
     }
 
     private fun createUserInFirebase(name: String, email: String, password: String) {
+
+
         lifecycleScope.launch {
             try {
                 val user = firebase.createUserWithEmailAndPassword(email, password).await().user
@@ -142,37 +143,43 @@ class SignUpActivity : AppCompatActivity() {
     }
 
     private fun saveUserDataToDatabase(userId: String, name: String, email: String, password: String, downloadUrl: Uri) {
-        lifecycleScope.launch {
-            try {
-                val userData = Users(Id=userId,name= name, email =  email, password =  password,image = downloadUrl.toString(), userType =  userType)
-                FirebaseDatabase.getInstance().getReference("Users")
-                    .child(userId)
-                    .setValue(userData)
-                    .await()
-                FirebaseAuth.getInstance().currentUser?.sendEmailVerification()?.addOnSuccessListener {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener{ task->
+            if(!task.isSuccessful) return@OnCompleteListener
+            var token = task.result
+            lifecycleScope.launch {
+                try {
+                    val userData = Users(Id=userId,name= name, email =  email, password =  password,image = downloadUrl.toString(), userType =  userType, usertoken = token)
+                    FirebaseDatabase.getInstance().getReference("Users")
+                        .child(userId)
+                        .setValue(userData)
+                        .await()
+                    FirebaseAuth.getInstance().currentUser?.sendEmailVerification()?.addOnSuccessListener {
 
-                    val dialog = AccountDialogeBinding.inflate(layoutInflater)
-                    val alertDialog = AlertDialog.Builder(this@SignUpActivity)
-                        .setView(dialog.root)
-                        .setCancelable(false)
-                        .create()
-                    Utils.hideProgressDialog()
-                    alertDialog.show()
-                    dialog.Okid.setOnClickListener {
-                        alertDialog.dismiss()
-                        FirebaseAuth.getInstance().signOut()
-                        startActivity(Intent(this@SignUpActivity, SigninActivity::class.java))
-                        finish()
-                    }
-                }
-                    ?.addOnFailureListener {exception->
+                        val dialog = AccountDialogeBinding.inflate(layoutInflater)
+                        val alertDialog = AlertDialog.Builder(this@SignUpActivity)
+                            .setView(dialog.root)
+                            .setCancelable(false)
+                            .create()
                         Utils.hideProgressDialog()
-                        Utils.showToast(this@SignUpActivity, "Email verification failed: ${exception.message}")
+                        alertDialog.show()
+                        dialog.Okid.setOnClickListener {
+                            alertDialog.dismiss()
+                            FirebaseAuth.getInstance().signOut()
+                            startActivity(Intent(this@SignUpActivity, SigninActivity::class.java))
+                            finish()
+                        }
                     }
-            } catch (e: Exception) {
-                Utils.hideProgressDialog()
-                Utils.showToast(this@SignUpActivity, e.message.toString())
+                        ?.addOnFailureListener {exception->
+                            Utils.hideProgressDialog()
+                            Utils.showToast(this@SignUpActivity, "Email verification failed: ${exception.message}")
+                        }
+                } catch (e: Exception) {
+                    Utils.hideProgressDialog()
+                    Utils.showToast(this@SignUpActivity, e.message.toString())
+                }
             }
-        }
+        })
+
+
     }
 }

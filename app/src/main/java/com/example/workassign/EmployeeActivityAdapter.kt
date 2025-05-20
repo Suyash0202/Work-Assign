@@ -6,12 +6,12 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.AsyncListDiffer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import com.example.workassign.databinding.EmployeeProfileItemBinding
+import com.example.workassign.Data.Works
 import com.example.workassign.databinding.ItemViewEmployeeWorksBinding
 import com.google.android.material.button.MaterialButton
 
-class EmployeeActivityAdapter( val onProgressClick: (Works, MaterialButton) -> Unit,
-                               val onCompleteClick: (Works, MaterialButton) -> Unit): RecyclerView.Adapter<EmployeeActivityAdapter.EmployeeActivityViewHolder>() {
+class EmployeeActivityAdapter(val onProgressClick: (Works, MaterialButton) -> Unit,
+                              val onCompleteClick: (Works, MaterialButton) -> Unit): RecyclerView.Adapter<EmployeeActivityAdapter.EmployeeActivityViewHolder>() {
 
     class EmployeeActivityViewHolder(val binding: ItemViewEmployeeWorksBinding): RecyclerView.ViewHolder(binding.root)
 

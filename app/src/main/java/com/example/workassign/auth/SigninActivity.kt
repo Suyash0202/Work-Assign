@@ -2,12 +2,10 @@ package com.example.workassign.auth
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log.e
 import android.view.MotionEvent
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.workassign.Data.Users
 import com.example.workassign.EmployeeMainActivity

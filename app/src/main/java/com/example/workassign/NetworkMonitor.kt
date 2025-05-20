@@ -3,7 +3,6 @@ package com.example.workassign
 
 import android.content.Context
 import android.net.*
-import android.widget.Toast
 
 class NetworkMonitor(private val context: Context) {
 

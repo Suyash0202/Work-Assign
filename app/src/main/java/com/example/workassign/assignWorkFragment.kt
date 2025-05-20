@@ -1,26 +1,35 @@
 package com.example.workassign
 
-import android.R.attr.priority
+
 import android.app.DatePickerDialog
 import android.content.Context
-import android.content.Context.INPUT_METHOD_SERVICE
 import android.content.Intent
 import android.icu.util.Calendar
 import android.os.Bundle
 import android.util.Log
-import android.util.Log.e
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import com.example.workassign.Api.ApiUtilities
+import com.example.workassign.Data.AndroidConfig
+import com.example.workassign.Data.FCMMessage
+import com.example.workassign.Data.MessageBody
+import com.example.workassign.Data.NotificationData
+import com.example.workassign.Data.Works
 import com.example.workassign.databinding.FragmentAssignWorkBinding
 import com.example.workassign.utils.Utils
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import com.google.gson.Gson
+import getAccessToken
+import okhttp3.ResponseBody
+import retrofit2.Callback
+import retrofit2.Call
+import retrofit2.Response
 
 
 class assignWorkFragment : Fragment() {
@@ -77,13 +86,14 @@ class assignWorkFragment : Fragment() {
 
         val bossId = FirebaseAuth.getInstance().currentUser?.uid
         Log.d("AssignWorkDebug", "bossId: $bossId, employeeId: ${employeeDetails.employeeData.Id}")
-
+        val employeeId = employeeDetails.employeeData.Id
         val workRoom = "${bossId}_${employeeDetails.employeeData.Id}"
         val workRef = FirebaseDatabase.getInstance().getReference("Work").child(workRoom)
         val pushId = workRef.push().key!!
 
         val work = Works(
             id = pushId,
+            bossId = bossId,
             workTitle = workTitle,
             workDescription = workDescription,
             workPriority = priorityList,
@@ -93,6 +103,7 @@ class assignWorkFragment : Fragment() {
         Utils.showProgressDialog(requireContext())
         workRef.child(pushId).setValue(work)
             .addOnSuccessListener {
+                sendNotificationToEmployee(employeeId,workTitle, lastDate)
                 Utils.hideProgressDialog()
                 Utils.showToast(requireContext(), "Work assigned successfully")
                 val employeeEmail = employeeDetails.employeeData.email
@@ -199,7 +210,63 @@ class assignWorkFragment : Fragment() {
             Utils.showToast(requireContext(), "No email apps installed")
         }
     }
+    private fun sendNotificationToEmployee(employeeId: String?, workTitle: String, lastDate: String) {
+        val empRef = FirebaseDatabase.getInstance().getReference("Users").child(employeeId ?: "")
+
+        empRef.get().addOnSuccessListener {
+            val empToken = it.child("usertoken").value?.toString()
+
+            if (empToken.isNullOrBlank() || empToken == "null") {
+                Log.e("Suyash", "Invalid or missing FCM token for employee: $employeeId")
+                return@addOnSuccessListener
+            }
+
+            val notification = NotificationData(
+                title = "New Work Assigned",
+                body = "Task: $workTitle | Deadline: $lastDate"
+            )
+            val messageBody = MessageBody(
+                token = empToken,
+                android = AndroidConfig(notification),
+                data = mapOf("lastDate" to lastDate)
+            )
+
+
+            val fcmMessage = FCMMessage(message = messageBody)
+
+            Log.d("Suyash", "Sending FCM to token: $empToken")
+            Log.d("Suyash", "Notification: ${notification.title} - ${notification.body}")
+            Log.d("Suyash", "Payload: ${Gson().toJson(fcmMessage)}")
+
+            getAccessToken { accessToken ->
+                val authHeader = "Bearer $accessToken"
+
+                ApiUtilities.api.sendNotification(fcmMessage, authHeader)
+                    .enqueue(object : Callback<ResponseBody> {
+                        override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+                            if (response.isSuccessful) {
+                                Log.d("Success", "✅ FCM v1 Notification sent successfully")
+                            } else {
+                                Log.e("fail", "❌ FCM v1 Failed: ${response.code()} - ${response.errorBody()?.string()}")
+                            }
+                        }
+
+                        override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+                            Log.e("fail", "🔥 Error sending notification", t)
+                        }
+                    })
+            }
+
+        }.addOnFailureListener {
+            Log.e("Suyash", "❌ Failed to get employee token: ${it.message}")
+        }
+    }
 
 
 
 }
+
+
+
+
+

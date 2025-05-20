@@ -11,4 +11,5 @@ data class Users(
                  var email: String?=null,
                  var password : String?=null,
                  var image : String?=null,
-                 var userType : String?=null) : Parcelable
+                 var userType : String?=null,
+                 var usertoken : String?=null) : Parcelable

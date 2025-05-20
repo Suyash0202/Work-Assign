@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.AsyncListDiffer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import com.example.workassign.Data.Works
 import com.example.workassign.databinding.ItemVewWorksfregmentBinding
 
 class WorkAdapter(val onUnassignedClick: (Works) -> Unit) : RecyclerView.Adapter<WorkAdapter.WorkViewHolder>() {
