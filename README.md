@@ -19,7 +19,7 @@ WorkAssign is a simple and efficient Android app that helps assign and track tas
   - Login
   - Password Reset
   - Email Verification
-- 📊 Tasks sorted by due date & status (In Progress, Completed)
+- 📊 Tasks sorted by status (In Progress, Completed)
 - 🔒 Role-based access & secure Firestore structure
 
 ---
@@ -32,6 +32,7 @@ WorkAssign is a simple and efficient Android app that helps assign and track tas
 - Firebase Cloud Messaging (FCM)
 - Firebase Realtime Database (for some features if needed)
 - MVVM Architecture
+- Coroutines 
 
 ---
 
