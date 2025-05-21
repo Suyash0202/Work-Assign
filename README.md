@@ -39,7 +39,7 @@ WorkAssign is a simple and efficient Android app that helps assign and track tas
 
 | Login | Assign Task | Dashboard |
 |-------|-------------|-----------|
-| ![](screens/login.png) | ![](screens/assign.png) | ![](screens/dashboard.png) |
+| ![](Log in.jpeg) | ![](Assign Work.jpeg) | ![](Employee List.jpeg) |
 
 
 
